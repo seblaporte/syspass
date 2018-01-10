@@ -1,0 +1,38 @@
+version: '2'
+
+networks:
+  vps:
+    external: true
+  default:
+
+services:
+  app:
+    container_name: syspass-app
+    image: nuxsmin/docker-syspass:latest
+    restart: always
+    links:
+      - db
+    networks:
+      - vps
+      - default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.backend=syspass"
+      - "traefik.docker.network=vps"
+      - "traefik.port=80"
+      - "traefik.frontend.rule=Host:${HOSTNAME_TO_REDIRECT}"
+    volumes:
+      - ./config:/var/www/html/sysPass/config
+      - ./backup:/var/www/html/sysPass/backup
+
+  db:
+    container_name: syspass-db
+    restart: always
+    networks:
+      - default
+    image: nuxsmin/docker-syspass:mysql
+    environment:
+      - DB_REMOTE_HOST=syspass-app.syspass_default
+      - DB_REMOTE_ROOT_PASS=${MYSQL_PASSWORD}
+    volumes:
+      - ./db:/var/lib/mysql
